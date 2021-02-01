@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 class TestEscalateGemWithDefaultLogger
-  extend Escalate.mixin
+  include Escalate.mixin
 end
 
 class TestEscalateGemWithLogger
-  extend Escalate.mixin
+  include Escalate.mixin
 
   class << self
     def logger
@@ -15,7 +15,7 @@ class TestEscalateGemWithLogger
 end
 
 class TestEscalateGemWithBlock
-  extend Escalate.mixin { some_other_logger }
+  include Escalate.mixin { some_other_logger }
 
   class << self
     def some_other_logger

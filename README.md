@@ -26,7 +26,7 @@ All you need to do is extend `Escalate.mixin` within your gem and you're all set
 
 ```ruby
 module SomeGem
-  extend Escalate.mixin
+  include Escalate.mixin
 end
 ```
 
@@ -35,7 +35,7 @@ of using `logger.error`.
 
 ```ruby
 module SomeGem
-  extend Escalate.mixin
+  include Escalate.mixin
 
   class << self
     attr_accessor :logger
