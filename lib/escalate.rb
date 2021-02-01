@@ -10,6 +10,9 @@ module Escalate
   class Error < StandardError; end
 
   class << self
+    # Returns a module to be mixed into a class or module exposing
+    # the ex_escalate method to be used for escalating and logging
+    # exceptions.
     def mixin(&block)
       Module.new do
         def ex_escalate(exception, message, **context)
@@ -23,6 +26,10 @@ module Escalate
             escalate_logger.error(error_message, **context)
           else
             escalate_logger.error(error_message)
+          end
+
+          Escalate.on_escalate_blocks.each do |block|
+            block.call(exception, message, **context)
           end
         end
 
@@ -46,6 +53,16 @@ module Escalate
           escalate_logger.is_a?(ContextualLogger::LoggerMixin)
         end
       end
+    end
+
+    # Registers an escalation callback to be executed when `ex_escalate`
+    # is invoked.
+    def on_escalate(&block)
+      on_escalate_blocks.add(block)
+    end
+
+    def on_escalate_blocks
+      @on_escalate_blocks ||= Set.new
     end
   end
 end

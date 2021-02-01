@@ -94,4 +94,25 @@ RSpec.describe Escalate do
       end
     end
   end
+
+  describe "#on_escalate" do
+    let(:callback) do
+      -> (exception, message, **context) { }
+    end
+
+    before { described_class.on_escalate(&callback) }
+
+    it 'registers the block provided' do
+      expect(described_class.send(:on_escalate_blocks)).to include(callback)
+    end
+
+    context 'when ex_escalate is called' do
+      before { allow(TestEscalateGemWithLogger).to receive(:logger).and_return(Logger.new('/dev/null')) }
+
+      it 'executes the callback' do
+        expect(callback).to receive(:call).with(exception, "I was doing something and got this exception", hello: "world", more: "context")
+        TestEscalateGemWithLogger.ex_escalate(exception, "I was doing something and got this exception", hello: "world", more: "context")
+      end
+    end
+  end
 end
