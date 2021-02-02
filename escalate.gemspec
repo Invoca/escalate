@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Invoca Development", "Octothorp"]
   spec.email         = ["development@invoca.com", "octothorp@invoca.com"]
 
-  spec.summary       = "Simple gem for abstracting log escalations"
-  spec.description   = "Simple gem for abstracting log escalations"
+  spec.summary       = "A simple and lightweight gem to escalate rescued exceptions."
+  spec.description   = "A simple and lightweight gem to escalate rescued exceptions."
   spec.homepage      = "https://github.com/invoca/escalate"
   spec.required_ruby_version = Gem::Requirement.new(">= 2.4.0")
 

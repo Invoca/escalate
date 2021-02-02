@@ -1,6 +1,10 @@
 # Escalate
 
-A simple and lightweight gem to help with escalating errors
+A simple and lightweight gem to escalate rescued exceptions. This implementation
+is an abstract interface that can be used on it's own, or attached to more concrete
+implementations like Honeybadger, Airbrake, or Sentry in order to not just log
+exceptions in an easy to parse way, but also escalate the appropriate information
+to third party systems.
 
 ## Installation
 
