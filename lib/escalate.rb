@@ -70,7 +70,7 @@ module Escalate
         private
 
         def escalate_logger
-          escalate_logger_block.try(:call) || default_escalate_logger
+          escalate_logger_block&.call || default_escalate_logger
         end
 
         def default_escalate_logger
