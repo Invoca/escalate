@@ -30,7 +30,7 @@ module SomeGem
 end
 ```
 
-This will expose the `Escalate#ex_escalate` method within your gem to be used instead
+This will expose the `Escalate#escalate` method within your gem to be used instead
 of using `logger.error`.
 
 ```ruby

@@ -46,7 +46,7 @@ module Escalate
     end
 
     # Returns a module to be mixed into a class or module exposing
-    # the ex_escalate method to be used for escalating and logging
+    # the escalate method to be used for escalating and logging
     # exceptions.
     #
     # @param [Proc] logger_block
@@ -63,7 +63,7 @@ module Escalate
       end
     end
 
-    # Registers an escalation callback to be executed when `ex_escalate`
+    # Registers an escalation callback to be executed when `escalate`
     # is invoked.
     def on_escalate(&block)
       on_escalate_blocks.add(block)

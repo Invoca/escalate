@@ -48,26 +48,26 @@ RSpec.describe Escalate do
     context "when there is not logger" do
       it 'uses a default logger' do
         expect(TestEscalateGemWithDefaultLogger.send(:default_escalate_logger)).to receive(:error)
-        TestEscalateGemWithDefaultLogger.ex_escalate(exception, "I was doing something and got this exception")
+        TestEscalateGemWithDefaultLogger.escalate(exception, "I was doing something and got this exception")
       end
     end
 
     context "when self.logger exists" do
       it 'uses the logger returned by the logger method' do
         expect(TestEscalateGemWithLogger.logger).to receive(:error)
-        TestEscalateGemWithLogger.ex_escalate(exception, "I was doing something and got this exception")
+        TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception")
       end
     end
 
     context "when a block is passed to the mixin" do
       it 'uses the logger returned by the block' do
         expect(TestEscalateGemWithBlock.some_other_logger).to receive(:error)
-        TestEscalateGemWithBlock.ex_escalate(exception, "I was doing something and got this exception")
+        TestEscalateGemWithBlock.escalate(exception, "I was doing something and got this exception")
       end
     end
   end
 
-  describe "#ex_escalate" do
+  describe "#escalate" do
     context "when context is passed" do
       let(:log_context) { { hello: "world", more: "context" } }
       let(:log_message) { "[Escalate] I was doing something and got this exception (#{log_context.inspect})\n  #{exception.class.name}: #{exception.message}\n  #{exception.backtrace.join("\n")}\n" }
@@ -88,7 +88,7 @@ RSpec.describe Escalate do
 
         it 'includes the provided context in the json log entry' do
           expect do
-            TestEscalateGemWithLogger.ex_escalate(exception, "I was doing something and got this exception", hello: "world", more: "context")
+            TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception", hello: "world", more: "context")
           end.to output("#{expected_log_line}\n").to_stdout_from_any_process
         end
       end
@@ -106,12 +106,12 @@ RSpec.describe Escalate do
       expect(described_class.send(:on_escalate_blocks)).to include(callback)
     end
 
-    context 'when ex_escalate is called' do
+    context 'when escalate is called' do
       before { allow(TestEscalateGemWithLogger).to receive(:logger).and_return(Logger.new('/dev/null')) }
 
       it 'executes the callback' do
         expect(callback).to receive(:call).with(exception, "I was doing something and got this exception", hello: "world", more: "context")
-        TestEscalateGemWithLogger.ex_escalate(exception, "I was doing something and got this exception", hello: "world", more: "context")
+        TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception", hello: "world", more: "context")
       end
     end
   end
