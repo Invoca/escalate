@@ -57,8 +57,24 @@ module Escalate
 
       Module.new do
         def self.included(base)
-          base.extend Escalate::Mixin
+          base.extend self
           base.escalate_logger_block = Thread.current[:escalate_logger_block] || -> { base.try(:logger) }
+        end
+
+        attr_accessor :escalate_logger_block
+
+        def escalate(exception, message, **context)
+          Escalate.escalate(exception, message, escalate_logger, **context)
+        end
+
+        private
+
+        def escalate_logger
+          escalate_logger_block.try(:call) || default_escalate_logger
+        end
+
+        def default_escalate_logger
+          @default_escalate_logger ||= Logger.new(STDERR)
         end
       end
     end
