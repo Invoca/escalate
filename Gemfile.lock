@@ -3,7 +3,6 @@ PATH
   specs:
     escalate (0.1.0.pre.1)
       activesupport
-      contextual_logger
 
 GEM
   remote: https://rubygems.org/
@@ -53,6 +52,7 @@ PLATFORMS
   x86_64-darwin-19
 
 DEPENDENCIES
+  contextual_logger
   escalate!
   pry
   pry-byebug

@@ -2,7 +2,6 @@
 
 require "active_support"
 require "active_support/core_ext"
-require "contextual_logger"
 
 require_relative "escalate/version"
 require_relative "escalate/mixin"
@@ -25,24 +24,25 @@ module Escalate
     # @param [Hash] context
     #   Any additional context to be tied to the escalation
     def escalate(exception, message, logger, **context)
-      error_message = <<~EOS
-        [Escalate] #{message} (#{context.inspect})
-          #{exception.class.name}: #{exception.message}
-          #{exception.backtrace.join("\n")}
-      EOS
+      ensure_failsafe("Exception rescued while escalating #{exception.inspect}") do
+        error_message = <<~EOS
+          [Escalate] #{message} (#{context.inspect})
+            #{exception.class.name}: #{exception.message}
+            #{exception.backtrace.join("\n")}
+        EOS
 
-      if logger.is_a?(ContextualLogger::LoggerMixin)
-        logger.error(error_message, **context)
-      else
-        logger.error(error_message)
-      end
+        if logger_allows_added_context?(logger)
+          logger.error(error_message, **context)
+        else
+          logger.error(error_message)
+        end
 
-      on_escalate_blocks.each do |block|
-        block.call(exception, message, **context)
+        on_escalate_blocks.each do |block|
+          ensure_failsafe("Exception rescued while escalating #{exception.inspect} to #{block.inspect}") do
+            block.call(exception, message, **context)
+          end
+        end
       end
-    rescue Exception => ex
-      STDERR.puts("[ExEscalator] Exception rescued while escalating #{exception.inspect}:" \
-                "#{ex.class.name}: #{ex.message}")
     end
 
     # Returns a module to be mixed into a class or module exposing
@@ -70,6 +70,17 @@ module Escalate
     end
 
     private
+
+    def ensure_failsafe(message)
+      yield
+    rescue Exception => ex
+      STDERR.puts("[Escalator] #{message}: #{ex.class.name}: #{ex.message}")
+    end
+
+    def logger_allows_added_context?(logger)
+      defined?(ContextualLogger::LoggerMixin) &&
+        logger.is_a?(ContextualLogger::LoggerMixin)
+    end
 
     def on_escalate_blocks
       @on_escalate_blocks ||= Set.new

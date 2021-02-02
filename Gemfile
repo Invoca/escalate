@@ -5,6 +5,8 @@ source "https://rubygems.org"
 # Specify your gem's dependencies in escalate.gemspec
 gemspec
 
+gem "contextual_logger"
+
 gem "pry"
 gem "pry-byebug"
 

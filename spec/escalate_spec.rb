@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'contextual_logger'
+
 class TestEscalateGemWithDefaultLogger
   include Escalate.mixin
 end
