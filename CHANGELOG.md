@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - Unreleased
+## [0.1.0] - 2021-02-03
+### Added
+- Added `Escalate.mixin` interface for mixing in `Escalate` with your module for easy escalation of rescued exceptions
+- Added `escalate` method for escalating rescued exceptions with default behavior of logging to `STDERR`
+- Added `Escalate.on_escalate` for registering escalation callbacks like `Honeybadger` or `Sentry`
 
 [0.1.0]: https://github.com/Invoca/escalate/releases/tag/v0.1.0
