@@ -1,8 +1,10 @@
 # Escalate
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/escalate`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
+A simple and lightweight gem to escalate rescued exceptions. This implementation
+is an abstract interface that can be used on it's own, or attached to more concrete
+implementations like Honeybadger, Airbrake, or Sentry in order to not just log
+exceptions in an easy to parse way, but also escalate the appropriate information
+to third party systems.
 
 ## Installation
 
@@ -22,8 +24,42 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+### Adding Escalate to Your Gem
 
+All you need to do is extend `Escalate.mixin` within your gem and you're all set.
+
+```ruby
+module SomeGem
+  include Escalate.mixin
+end
+```
+
+This will expose the `Escalate#escalate` method within your gem to be used instead
+of using `logger.error`.
+
+```ruby
+module SomeGem
+  include Escalate.mixin
+
+  class << self
+    attr_accessor :logger
+  end
+
+  class SomeClass
+    def something_dangerous
+      # ...
+    rescue => ex
+      SomeGem.escalate(ex, "I was doing something dangerous and an exception was raised")
+    end
+  end
+end
+```
+
+When `SomeGem.escalate` above is triggered, it will use the logger returned by `SomeGem.logger` or
+default to a `STDERR` logger and do the following:
+
+1. Log an error containing the exception and any additional information about the current environment that is specified
+2. Trigger any `escalation_callbacks` configured on the `Escalate` gem
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
@@ -32,4 +68,4 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/escalate.
+Bug reports and pull requests are welcome on GitHub at https://github.com/invoca/escalate.
