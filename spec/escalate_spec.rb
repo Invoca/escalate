@@ -37,6 +37,11 @@ RSpec.describe Escalate do
 
   before do
     allow(Time).to receive(:now).and_return(Time.parse("2021-02-01"))
+    Escalate.clear_all_on_escalate_blocks
+  end
+
+  after do
+    Escalate.clear_all_on_escalate_blocks
   end
 
   it "has a version number" do
@@ -72,7 +77,7 @@ RSpec.describe Escalate do
   describe "#escalate" do
     context "when context is passed" do
       let(:log_context) { { hello: "world", more: "context" } }
-      let(:log_message) { "[Escalate] I was doing something and got this exception (#{log_context.inspect})\n  #{exception.class.name}: #{exception.message}\n  #{exception.backtrace.join("\n")}\n" }
+      let(:log_message) { "[Escalate] I was doing something and got this exception (#{log_context.inspect})\n#{exception.class.name}: #{exception.message}\n#{exception.backtrace.join("\n")}\n" }
 
       before { allow(TestEscalateGemWithLogger).to receive(:logger).and_return(logger) }
 
@@ -128,6 +133,28 @@ RSpec.describe Escalate do
 
       it 'registers the block provided' do
         expect(described_class.send(:on_escalate_blocks)).to include(callback)
+      end
+    end
+
+    describe "log_first: false" do
+      before { described_class.on_escalate(log_first: false, &callback) }
+
+      it 'registers the block provided' do
+        expect(described_class.send(:on_escalate_blocks)).to be_empty
+        expect(described_class.send(:on_escalate_no_log_first_blocks)).to include(callback)
+      end
+
+      context 'when escalate is called' do
+        let(:logger) { instance_double(Logger) }
+        before do
+          allow(TestEscalateGemWithLogger).to receive(:logger).and_return(logger)
+          expect(logger).to_not receive(:error)
+        end
+
+        it 'executes the callback' do
+          expect(callback).to receive(:call).with(exception, "I was doing something and got this exception", hello: "world", more: "context")
+          TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception", hello: "world", more: "context")
+        end
       end
     end
   end

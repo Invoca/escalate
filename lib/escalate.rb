@@ -25,19 +25,21 @@ module Escalate
     #   Any additional context to be tied to the escalation
     def escalate(exception, location_message, logger, **context)
       ensure_failsafe("Exception rescued while escalating #{exception.inspect}") do
-        error_message = <<~EOS
-          [Escalate] #{location_message} (#{context.inspect})
+        if on_escalate_blocks.any? || on_escalate_no_log_first_blocks.none?
+          error_message = <<~EOS
+            [Escalate] #{location_message} (#{context.inspect})
             #{exception.class.name}: #{exception.message}
             #{exception.backtrace.join("\n")}
-        EOS
+          EOS
 
-        if logger_allows_added_context?(logger)
-          logger.error(error_message, **context)
-        else
-          logger.error(error_message)
+          if logger_allows_added_context?(logger)
+            logger.error(error_message, **context)
+          else
+            logger.error(error_message)
+          end
         end
 
-        on_escalate_blocks.each do |block|
+        all_on_escalate_blocks.each do |block|
           ensure_failsafe("Exception rescued while escalating #{exception.inspect} to #{block.inspect}") do
             block.call(exception, location_message, **context)
           end
@@ -85,7 +87,16 @@ module Escalate
     # @param [boolean] log_first: true
     #   whether escalate should log first before escalating, or leave the logging to the escalate block
     def on_escalate(log_first: true, &block)
-      on_escalate_blocks.add(block)
+      if log_first
+        on_escalate_blocks.add(block)
+      else
+        on_escalate_no_log_first_blocks.add(block)
+      end
+    end
+
+    def clear_all_on_escalate_blocks
+      on_escalate_blocks.clear
+      on_escalate_no_log_first_blocks.clear
     end
 
     private
@@ -103,6 +114,14 @@ module Escalate
 
     def on_escalate_blocks
       @on_escalate_blocks ||= Set.new
+    end
+
+    def on_escalate_no_log_first_blocks
+      @on_escalate_no_log_first_blocks ||= Set.new
+    end
+
+    def all_on_escalate_blocks
+      on_escalate_blocks + on_escalate_no_log_first_blocks
     end
   end
 end
