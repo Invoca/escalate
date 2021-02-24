@@ -13,20 +13,20 @@ module Escalate
     # Logs and escalated an exception
     #
     # @param [Exception] exception
-    #   The exception that was raised and needs to be escalated
+    #   The exception that was rescued and needs to be escalated
     #
-    # @param [String] message
-    #   An additional message about what was happening at the time of the exception
+    # @param [String] location_message
+    #   An additional message giving an indication of where in the code this exception was rescued
     #
     # @param [Logger] logger
     #   The logger object to use when logging the exception
     #
     # @param [Hash] context
     #   Any additional context to be tied to the escalation
-    def escalate(exception, message, logger, **context)
+    def escalate(exception, location_message, logger, **context)
       ensure_failsafe("Exception rescued while escalating #{exception.inspect}") do
         error_message = <<~EOS
-          [Escalate] #{message} (#{context.inspect})
+          [Escalate] #{location_message} (#{context.inspect})
             #{exception.class.name}: #{exception.message}
             #{exception.backtrace.join("\n")}
         EOS
@@ -39,7 +39,7 @@ module Escalate
 
         on_escalate_blocks.each do |block|
           ensure_failsafe("Exception rescued while escalating #{exception.inspect} to #{block.inspect}") do
-            block.call(exception, message, **context)
+            block.call(exception, location_message, **context)
           end
         end
       end
@@ -63,8 +63,8 @@ module Escalate
 
         attr_accessor :escalate_logger_block
 
-        def escalate(exception, message, **context)
-          Escalate.escalate(exception, message, escalate_logger, **context)
+        def escalate(exception, location_message, **context)
+          Escalate.escalate(exception, location_message, escalate_logger, **context)
         end
 
         private
@@ -81,7 +81,10 @@ module Escalate
 
     # Registers an escalation callback to be executed when `escalate`
     # is invoked.
-    def on_escalate(&block)
+    #
+    # @param [boolean] log_first: true
+    #   whether escalate should log first before escalating, or leave the logging to the escalate block
+    def on_escalate(log_first: true, &block)
       on_escalate_blocks.add(block)
     end
 

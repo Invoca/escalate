@@ -99,21 +99,35 @@ RSpec.describe Escalate do
 
   describe "#on_escalate" do
     let(:callback) do
-      -> (exception, message, **context) { }
+      -> (_exception, _message, **_context) { }
     end
 
-    before { described_class.on_escalate(&callback) }
+    describe "log_first: true (default)" do
+      before { described_class.on_escalate(&callback) }
 
-    it 'registers the block provided' do
-      expect(described_class.send(:on_escalate_blocks)).to include(callback)
+      it 'registers the block provided' do
+        expect(described_class.send(:on_escalate_blocks)).to include(callback)
+      end
+
+      context 'when escalate is called' do
+        let(:logger) { instance_double(Logger) }
+        before do
+          allow(TestEscalateGemWithLogger).to receive(:logger).and_return(logger)
+          expect(logger).to receive(:error).with(/\[Escalate\] I was doing something and got this exception .*:hello=>.*world.*, :more=>.*context/)
+        end
+
+        it 'executes the callback' do
+          expect(callback).to receive(:call).with(exception, "I was doing something and got this exception", hello: "world", more: "context")
+          TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception", hello: "world", more: "context")
+        end
+      end
     end
 
-    context 'when escalate is called' do
-      before { allow(TestEscalateGemWithLogger).to receive(:logger).and_return(Logger.new('/dev/null')) }
+    describe "log_first: true (explicit)" do
+      before { described_class.on_escalate(log_first: true, &callback) }
 
-      it 'executes the callback' do
-        expect(callback).to receive(:call).with(exception, "I was doing something and got this exception", hello: "world", more: "context")
-        TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception", hello: "world", more: "context")
+      it 'registers the block provided' do
+        expect(described_class.send(:on_escalate_blocks)).to include(callback)
       end
     end
   end
