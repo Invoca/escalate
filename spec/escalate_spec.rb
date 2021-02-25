@@ -37,11 +37,11 @@ RSpec.describe Escalate do
 
   before do
     allow(Time).to receive(:now).and_return(Time.parse("2021-02-01"))
-    Escalate.clear_all_on_escalate_blocks
+    Escalate.clear_on_escalate_callbacks
   end
 
   after do
-    Escalate.clear_all_on_escalate_blocks
+    Escalate.clear_on_escalate_callbacks
   end
 
   it "has a version number" do
@@ -140,8 +140,7 @@ RSpec.describe Escalate do
       before { described_class.on_escalate(log_first: false, &callback) }
 
       it 'registers the block provided' do
-        expect(described_class.send(:on_escalate_blocks)).to be_empty
-        expect(described_class.send(:on_escalate_no_log_first_blocks)).to include(callback)
+        expect(described_class.send(:on_escalate_blocks)).to include(callback)
       end
 
       context 'when escalate is called' do
