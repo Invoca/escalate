@@ -32,16 +32,17 @@ module Escalate
     def escalate(exception, location_message, logger, **context)
       ensure_failsafe("Exception rescued while escalating #{exception.inspect}") do
         if on_escalate_callbacks.none? || on_escalate_callbacks.any? { |block| block.instance_variable_get(LOG_FIRST_INSTANCE_VARIABLE) }
+          logger_allows_added_context?(logger) or context_string = " (#{context.inspect})"
           error_message = <<~EOS
-            [Escalate] #{location_message} (#{context.inspect})
+            [Escalate] #{location_message}#{context_string}
             #{exception.class.name}: #{exception.message}
             #{exception.backtrace.join("\n")}
           EOS
 
-          if logger_allows_added_context?(logger)
-            logger.error(error_message, **context)
-          else
+          if context_string
             logger.error(error_message)
+          else
+            logger.error(error_message, **context)
           end
         end
 

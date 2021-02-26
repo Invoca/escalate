@@ -77,7 +77,7 @@ RSpec.describe Escalate do
   describe "#escalate" do
     context "when context is passed" do
       let(:log_context) { { hello: "world", more: "context" } }
-      let(:log_message) { "[Escalate] I was doing something and got this exception (#{log_context.inspect})\n#{exception.class.name}: #{exception.message}\n#{exception.backtrace.join("\n")}\n" }
+      let(:log_message) { "[Escalate] I was doing something and got this exception\n#{exception.class.name}: #{exception.message}\n#{exception.backtrace.join("\n")}\n" }
 
       before { allow(TestEscalateGemWithLogger).to receive(:logger).and_return(logger) }
 
@@ -97,6 +97,18 @@ RSpec.describe Escalate do
           expect do
             TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception", hello: "world", more: "context")
           end.to output("#{expected_log_line}\n").to_stdout_from_any_process
+        end
+      end
+
+      context "when the logger doesn't extend ContextualLogger" do
+        let(:logger) { Logger.new(STDOUT) }
+        let(:log_message) { "[Escalate] I was doing something and got this exception ({:hello=>\"world\", :more=>\"context\"})" }
+        let(:expected_log_line) { /#{Regexp.escape(log_message)}/ }
+
+        it 'includes the provided context at the end of the message' do
+          expect do
+            TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception", hello: "world", more: "context")
+          end.to output(expected_log_line).to_stdout_from_any_process
         end
       end
     end
