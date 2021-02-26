@@ -20,4 +20,6 @@ RSpec.configure do |config|
   config.mock_with :rspec do |mocks|
     mocks.verify_partial_doubles = true
   end
+
+  RSpec::Support::ObjectFormatter.default_instance.max_formatted_output_length = 2_000
 end
