@@ -11,7 +11,11 @@ module Escalate
 
   LOG_FIRST_INSTANCE_VARIABLE = :@_escalate_log_first
 
+  @on_escalate_callbacks = Set.new
+
   class << self
+    attr_reader :on_escalate_callbacks
+
     # Logs and escalated an exception
     #
     # @param [Exception] exception
@@ -27,7 +31,7 @@ module Escalate
     #   Any additional context to be tied to the escalation
     def escalate(exception, location_message, logger, **context)
       ensure_failsafe("Exception rescued while escalating #{exception.inspect}") do
-        if on_escalate_blocks.none? || on_escalate_blocks.any? { |block| block.instance_variable_get(LOG_FIRST_INSTANCE_VARIABLE) }
+        if on_escalate_callbacks.none? || on_escalate_callbacks.any? { |block| block.instance_variable_get(LOG_FIRST_INSTANCE_VARIABLE) }
           error_message = <<~EOS
             [Escalate] #{location_message} (#{context.inspect})
             #{exception.class.name}: #{exception.message}
@@ -41,7 +45,7 @@ module Escalate
           end
         end
 
-        on_escalate_blocks.each do |block|
+        on_escalate_callbacks.each do |block|
           ensure_failsafe("Exception rescued while escalating #{exception.inspect} to #{block.inspect}") do
             block.call(exception, location_message, **context)
           end
@@ -90,11 +94,11 @@ module Escalate
     #   whether escalate should log first before escalating, or leave the logging to the escalate block
     def on_escalate(log_first: true, &block)
       block.instance_variable_set(LOG_FIRST_INSTANCE_VARIABLE, log_first)
-      on_escalate_blocks.add(block)
+      on_escalate_callbacks.add(block)
     end
 
     def clear_on_escalate_callbacks
-      on_escalate_blocks.clear
+      on_escalate_callbacks.clear
     end
 
     private
@@ -108,10 +112,6 @@ module Escalate
     def logger_allows_added_context?(logger)
       defined?(ContextualLogger::LoggerMixin) &&
         logger.is_a?(ContextualLogger::LoggerMixin)
-    end
-
-    def on_escalate_blocks
-      @on_escalate_blocks ||= Set.new
     end
   end
 end

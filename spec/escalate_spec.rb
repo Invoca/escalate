@@ -111,7 +111,7 @@ RSpec.describe Escalate do
       before { described_class.on_escalate(&callback) }
 
       it 'registers the block provided' do
-        expect(described_class.send(:on_escalate_blocks)).to include(callback)
+        expect(described_class.on_escalate_callbacks).to include(callback)
       end
 
       context 'when escalate is called' do
@@ -132,7 +132,7 @@ RSpec.describe Escalate do
       before { described_class.on_escalate(log_first: true, &callback) }
 
       it 'registers the block provided' do
-        expect(described_class.send(:on_escalate_blocks)).to include(callback)
+        expect(described_class.on_escalate_callbacks).to include(callback)
       end
     end
 
@@ -140,7 +140,7 @@ RSpec.describe Escalate do
       before { described_class.on_escalate(log_first: false, &callback) }
 
       it 'registers the block provided' do
-        expect(described_class.send(:on_escalate_blocks)).to include(callback)
+        expect(described_class.on_escalate_callbacks).to include(callback)
       end
 
       context 'when escalate is called' do
