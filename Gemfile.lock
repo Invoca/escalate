@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    escalate (0.2.0.pre.3)
+    escalate (0.2.0.pre.4)
       activesupport
 
 GEM
