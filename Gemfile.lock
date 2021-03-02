@@ -2,7 +2,6 @@ PATH
   remote: .
   specs:
     escalate (0.2.0)
-      activesupport
 
 GEM
   remote: https://rubygems.org/
