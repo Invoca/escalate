@@ -123,7 +123,7 @@ RSpec.describe Escalate do
       before { described_class.on_escalate(&callback) }
 
       it 'registers the block provided' do
-        expect(described_class.on_escalate_callbacks).to include(callback)
+        expect(described_class.on_escalate_callbacks.values).to include(callback)
       end
 
       context 'when escalate is called' do
@@ -144,7 +144,7 @@ RSpec.describe Escalate do
       before { described_class.on_escalate(log_first: true, &callback) }
 
       it 'registers the block provided' do
-        expect(described_class.on_escalate_callbacks).to include(callback)
+        expect(described_class.on_escalate_callbacks.values).to include(callback)
       end
     end
 
@@ -152,7 +152,7 @@ RSpec.describe Escalate do
       before { described_class.on_escalate(log_first: false, &callback) }
 
       it 'registers the block provided' do
-        expect(described_class.on_escalate_callbacks).to include(callback)
+        expect(described_class.on_escalate_callbacks.values).to include(callback)
       end
 
       context 'when escalate is called' do
@@ -166,6 +166,25 @@ RSpec.describe Escalate do
           expect(callback).to receive(:call).with(exception, "I was doing something and got this exception", hello: "world", more: "context")
           TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception", hello: "world", more: "context")
         end
+      end
+    end
+
+    describe 'name:' do
+      it 'uniques on name:' do
+        expect(described_class.on_escalate_callbacks.size).to eq(0)
+        described_class.on_escalate(name: 'abc', &callback)
+        expect(described_class.on_escalate_callbacks.size).to eq(1)
+        described_class.on_escalate(name: 'abc') { }
+        expect(described_class.on_escalate_callbacks.size).to eq(1)
+      end
+
+      it 'defaults name: to .source_location' do
+        expect(described_class.on_escalate_callbacks.size).to eq(0)
+        expect(callback).to receive(:source_location) { ['a.rb', 3] }.twice
+        described_class.on_escalate(&callback)
+        expect(described_class.on_escalate_callbacks.size).to eq(1)
+        described_class.on_escalate(&callback)
+        expect(described_class.on_escalate_callbacks.size).to eq(1)
       end
     end
   end

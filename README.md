@@ -78,6 +78,16 @@ Escalate.on_escalate do |exception, location_message, **context|
 end
 ```
 
+#### Callback Uniqueness
+Each callback may be named with the `name:` keyword argument.
+If a callback with the same name has been registered before, it will be overwritten with the new one.
+```
+Escalate.on_escalate(name: 'abc gem') do |exception, location_message, **context|
+  # send exception, location_message, **context to the error reporting service here
+end
+```
+If not given, the `name:` defaults to the `.source_location` property of the passed-in block.
+
 #### Handle the Logging in the `on_escalate` Callback
 Here is an example that handles logging itself with `log_first: false`:
 ```
