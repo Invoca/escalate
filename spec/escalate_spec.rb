@@ -26,6 +26,8 @@ class TestEscalateGemWithBlock
   end
 end
 
+class DerivedFromException < Exception; end
+
 RSpec.describe Escalate do
   let(:exception) {
     begin
@@ -95,7 +97,7 @@ RSpec.describe Escalate do
 
         it 'includes the provided context in the json log entry' do
           expect do
-            TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception", hello: "world", more: "context")
+            TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception", context: { hello: "world", more: "context" })
           end.to output("#{expected_log_line}\n").to_stdout_from_any_process
         end
       end
@@ -107,7 +109,7 @@ RSpec.describe Escalate do
 
         it 'includes the provided context at the end of the message' do
           expect do
-            TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception", hello: "world", more: "context")
+            TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception", context: { hello: "world", more: "context" })
           end.to output(expected_log_line).to_stdout_from_any_process
         end
       end
@@ -122,15 +124,26 @@ RSpec.describe Escalate do
     let(:expected_log_line) { /#{Regexp.escape(log_message)}/ }
 
     it 'rescues and calls escalate' do
-      expect(TestEscalateGemWithLogger).to receive(:escalate).with(be_exception(ArgumentError, 'bang!'), location_message, context)
+      expect(TestEscalateGemWithLogger).to receive(:escalate).with(be_exception(ArgumentError, 'bang!'), location_message, context: context)
 
-      TestEscalateGemWithLogger.rescue_and_escalate(location_message, context) do
+      TestEscalateGemWithLogger.rescue_and_escalate(location_message, context: context) do
         raise ArgumentError, 'bang!'
       end
     end
 
     context 'when exceptions: given' do
-      it 'rescues matching exceptions'
+      let(:exception_class) { DerivedFromException }
+      let(:exception_message) { 'boom!' }
+      let(:args) { [location_message, context: context, exceptions: [exception_class]] }
+      let(:subject) do
+        TestEscalateGemWithLogger.rescue_and_escalate(*args) do
+          raise exception_class, exception_message
+        end
+      end
+
+      it 'rescues matching exceptions' do
+        expect { subject }.to_not raise_exception
+      end
 
       it 'passes through non-matching exceptions'
 
@@ -183,7 +196,7 @@ RSpec.describe Escalate do
 
         it 'executes the callback' do
           expect(callback).to receive(:call).with(exception, "I was doing something and got this exception", hello: "world", more: "context")
-          TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception", hello: "world", more: "context")
+          TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception", context: { hello: "world", more: "context" })
         end
       end
     end
@@ -212,7 +225,7 @@ RSpec.describe Escalate do
 
         it 'executes the callback' do
           expect(callback).to receive(:call).with(exception, "I was doing something and got this exception", hello: "world", more: "context")
-          TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception", hello: "world", more: "context")
+          TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception", context: { hello: "world", more: "context" })
         end
       end
     end

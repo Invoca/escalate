@@ -29,7 +29,7 @@ module Escalate
     #
     # @param [Hash] context
     #   Any additional context to be tied to the escalation
-    def escalate(exception, location_message, logger, **context)
+    def escalate(exception, location_message, logger, context: {})
       ensure_failsafe("Exception rescued while escalating #{exception.inspect}") do
         if on_escalate_callbacks.none? || on_escalate_callbacks.values.any? { |block| block.instance_variable_get(LOG_FIRST_INSTANCE_VARIABLE) }
           logger_allows_added_context?(logger) or context_string = " (#{context.inspect})"
@@ -72,14 +72,14 @@ module Escalate
 
         attr_accessor :escalate_logger_block
 
-        def escalate(exception, location_message, **context)
-          Escalate.escalate(exception, location_message, escalate_logger, **context)
+        def escalate(exception, location_message, context: {})
+          Escalate.escalate(exception, location_message, escalate_logger, context: context)
         end
 
-        def rescue_and_escalate(location_message, **context, &block)
+        def rescue_and_escalate(location_message, context: {}, exceptions: Exception, &block)
           yield
-        rescue => exception
-          escalate(exception, location_message, context)
+        rescue *Array(exceptions) => exception
+          escalate(exception, location_message, context: context)
         end
 
         private
