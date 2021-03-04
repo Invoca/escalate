@@ -114,6 +114,54 @@ RSpec.describe Escalate do
     end
   end
 
+  describe '#rescue_and_escalate' do
+    let(:logger) { Logger.new(STDOUT) }
+    let(:location_message) { "I was doing something and got this exception" }
+    let(:context) { { hello: "world" } }
+    let(:log_message) { "[Escalate] #{location_message} (#{context.inspect})" }
+    let(:expected_log_line) { /#{Regexp.escape(log_message)}/ }
+
+    it 'rescues and calls escalate' do
+      expect(TestEscalateGemWithLogger).to receive(:escalate).with(be_exception(ArgumentError, 'bang!'), location_message, context)
+
+      TestEscalateGemWithLogger.rescue_and_escalate(location_message, context) do
+        raise ArgumentError, 'bang!'
+      end
+    end
+
+    context 'when exceptions: given' do
+      it 'rescues matching exceptions'
+
+      it 'passes through non-matching exceptions'
+
+      it 'passes through matching exceptions on the default pass_through_exceptions: list'
+    end
+
+    context 'when exceptions: is empty' do
+      it 'passes through matching exceptions on the default pass_through_exceptions: list'
+
+      it 'passes through matching exceptions not on the default pass_through_exceptions: list'
+    end
+
+    context 'when pass_through_exceptions: given' do
+      it 'passes through matching exceptions'
+
+      it 'rescues non-matching exceptions'
+    end
+
+    context 'when pass_through_exceptions: is empty' do
+      it 'passes through matching exceptions'
+
+      it 'rescues non-matching exceptions'
+    end
+
+    context 'when both exceptions: and pass_through_exceptions: given' do
+      it 'rescues exceptions matching exceptions:'
+
+      it 'passes through exceptions matching pass_through_exceptions'
+    end
+  end
+
   describe "#on_escalate" do
     let(:callback) do
       -> (_exception, _message, **_context) { }

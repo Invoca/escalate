@@ -76,6 +76,12 @@ module Escalate
           Escalate.escalate(exception, location_message, escalate_logger, **context)
         end
 
+        def rescue_and_escalate(location_message, **context, &block)
+          yield
+        rescue => exception
+          escalate(exception, location_message, context)
+        end
+
         private
 
         def escalate_logger
