@@ -136,9 +136,10 @@ RSpec.describe Escalate do
       let(:exception_class) { DerivedFromException }
       let(:exception_message) { 'boom!' }
       let(:exceptions) { [DerivedFromException] }
-      let(:args) { [location_message, context: context, exceptions: exceptions] }
+      let(:args) { [location_message] }
+      let(:kwargs) { { context: context, exceptions: exceptions } }
       let(:subject) do
-        TestEscalateGemWithLogger.rescue_and_escalate(*args) do
+        TestEscalateGemWithLogger.rescue_and_escalate(*args, **kwargs) do
           raise exception_class, exception_message
         end
       end
@@ -157,7 +158,16 @@ RSpec.describe Escalate do
         end
       end
 
-      it 'passes through matching exceptions on the default pass_through_exceptions: list'
+      context 'when broad exceptions rescued but pass-through exception raised' do
+        let(:exceptions) { [Exception] }
+        let(:exception_class) { NoMemoryError }
+
+        it 'passes through exception' do
+          expect do
+            subject
+          end.to raise_exception(exception_class, exception_message)
+        end
+      end
     end
 
     context 'when exceptions: is empty' do

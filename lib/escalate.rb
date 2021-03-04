@@ -11,6 +11,9 @@ module Escalate
 
   LOG_FIRST_INSTANCE_VARIABLE = :@_escalate_log_first
 
+  DEFAULT_RESCUE_EXCEPTIONS       = [Exception].freeze
+  DEFAULT_PASS_THROUGH_EXCEPTIONS = [SystemExit, SystemStackError, NoMemoryError, SecurityError, SignalException].freeze
+
   @on_escalate_callbacks = {}
 
   class << self
@@ -76,8 +79,15 @@ module Escalate
           Escalate.escalate(exception, location_message, escalate_logger, context: context)
         end
 
-        def rescue_and_escalate(location_message, context: {}, exceptions: Exception, &block)
+        def rescue_and_escalate(location_message, context: {},
+                                exceptions: DEFAULT_RESCUE_EXCEPTIONS,
+                                pass_through_exceptions: DEFAULT_PASS_THROUGH_EXCEPTIONS,
+                                &block)
+
           yield
+
+        rescue *Array(pass_through_exceptions)
+          raise
         rescue *Array(exceptions) => exception
           escalate(exception, location_message, context: context)
         end
