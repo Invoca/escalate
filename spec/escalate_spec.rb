@@ -27,6 +27,7 @@ class TestEscalateGemWithBlock
 end
 
 class DerivedFromException < Exception; end
+class SiblingDerivedFromException < Exception; end
 
 RSpec.describe Escalate do
   let(:exception) {
@@ -134,7 +135,8 @@ RSpec.describe Escalate do
     context 'when exceptions: given' do
       let(:exception_class) { DerivedFromException }
       let(:exception_message) { 'boom!' }
-      let(:args) { [location_message, context: context, exceptions: [exception_class]] }
+      let(:exceptions) { [DerivedFromException] }
+      let(:args) { [location_message, context: context, exceptions: exceptions] }
       let(:subject) do
         TestEscalateGemWithLogger.rescue_and_escalate(*args) do
           raise exception_class, exception_message
@@ -145,7 +147,15 @@ RSpec.describe Escalate do
         expect { subject }.to_not raise_exception
       end
 
-      it 'passes through non-matching exceptions'
+      context 'when non-matching exception raised' do
+        let(:exception_class) { SiblingDerivedFromException }
+
+        it 'passes through' do
+          expect do
+            subject
+          end.to raise_exception(exception_class, exception_message)
+        end
+      end
 
       it 'passes through matching exceptions on the default pass_through_exceptions: list'
     end
