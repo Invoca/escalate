@@ -11,7 +11,7 @@ module Escalate
 
   LOG_FIRST_INSTANCE_VARIABLE = :@_escalate_log_first
 
-  DEFAULT_RESCUE_EXCEPTIONS       = [Exception].freeze
+  DEFAULT_RESCUE_EXCEPTIONS       = [StandardError].freeze
   DEFAULT_PASS_THROUGH_EXCEPTIONS = [SystemExit, SystemStackError, NoMemoryError, SecurityError, SignalException].freeze
 
   @on_escalate_callbacks = {}

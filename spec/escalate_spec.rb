@@ -132,7 +132,7 @@ RSpec.describe Escalate do
       end
     end
 
-    context 'when exceptions: given' do
+    context 'with basic defaults' do
       let(:exception_class) { DerivedFromException }
       let(:exception_message) { 'boom!' }
       let(:exceptions) { [DerivedFromException] }
@@ -152,20 +152,27 @@ RSpec.describe Escalate do
         let(:exception_class) { SiblingDerivedFromException }
 
         it 'passes through' do
-          expect do
-            subject
-          end.to raise_exception(exception_class, exception_message)
+          expect { subject }.to raise_exception(exception_class, exception_message)
         end
       end
 
-      context 'when broad exceptions rescued but pass-through exception raised' do
+      context 'when broad exceptions rescued' do
         let(:exceptions) { [Exception] }
-        let(:exception_class) { NoMemoryError }
 
-        it 'passes through exception' do
-          expect do
-            subject
-          end.to raise_exception(exception_class, exception_message)
+        context 'but pass-through exception raised' do
+          let(:exception_class) { NoMemoryError }
+
+          it 'passes through exception' do
+            expect { subject }.to raise_exception(exception_class, exception_message)
+          end
+        end
+
+        context 'and non-pass-through exception raised' do
+          let(:exception_class) { RuntimeError }
+
+          it 'rescues matching exceptions' do
+            expect { subject }.to_not raise_exception
+          end
         end
       end
 
@@ -174,9 +181,7 @@ RSpec.describe Escalate do
         let(:exception_class) { NoMemoryError }
 
         it 'passes through matching exceptions on the default pass_through_exceptions: list' do
-          expect do
-            subject
-          end.to raise_exception(exception_class, exception_message)
+          expect { subject }.to raise_exception(exception_class, exception_message)
         end
       end
 
@@ -184,26 +189,49 @@ RSpec.describe Escalate do
         let(:exceptions) { [] }
         let(:exception_class) { NoMemoryError }
 
-        it 'passes through matching exceptions not on the default pass_through_exceptions: list'
+        it 'passes through matching exceptions not on the default pass_through_exceptions: list' do
+          expect { subject }.to raise_exception(exception_class, exception_message)
+        end
       end
-    end
 
-    context 'when pass_through_exceptions: given' do
-      it 'passes through matching exceptions'
+      context 'when pass_through_exceptions: is empty' do
+        let(:kwargs) { { context: context, exceptions: exceptions, pass_through_exceptions: [] } }
 
-      it 'rescues non-matching exceptions'
-    end
+        context 'and exception raised matching exceptions:' do
+          it 'rescues matching exceptions' do
+            expect { subject }.to_not raise_exception
+          end
+        end
 
-    context 'when pass_through_exceptions: is empty' do
-      it 'passes through matching exceptions'
+        context 'and exception raised not matching exceptions:' do
+          let(:exception_class) { SiblingDerivedFromException }
 
-      it 'rescues non-matching exceptions'
-    end
+          it 'passes through non-matching exceptions' do
+            expect { subject }.to raise_exception(exception_class, exception_message)
+          end
+        end
+      end
 
-    context 'when both exceptions: and pass_through_exceptions: given' do
-      it 'rescues exceptions matching exceptions:'
+      context 'when both exceptions: and pass_through_exceptions: given' do
+        let(:exceptions) { [Exception] }
+        let(:kwargs) { { context: context, exceptions: exceptions, pass_through_exceptions: [DerivedFromException] } }
 
-      it 'passes through exceptions matching pass_through_exceptions'
+        context 'when exception raised that matches exceptions:' do
+          let(:exception_class) { SiblingDerivedFromException }
+
+          it 'rescues matching exceptions' do
+            expect { subject }.to_not raise_exception
+          end
+        end
+
+        context 'when exception raised that matches pass_through_exceptions:' do
+          let(:exception_class) { DerivedFromException }
+
+          it 'passes through exception' do
+            expect { subject }.to raise_exception(exception_class, exception_message)
+          end
+        end
+      end
     end
   end
 
