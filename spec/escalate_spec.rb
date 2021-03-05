@@ -168,12 +168,24 @@ RSpec.describe Escalate do
           end.to raise_exception(exception_class, exception_message)
         end
       end
-    end
 
-    context 'when exceptions: is empty' do
-      it 'passes through matching exceptions on the default pass_through_exceptions: list'
+      context 'when exceptions: is empty but pass-through exception raised' do
+        let(:exceptions) { [] }
+        let(:exception_class) { NoMemoryError }
 
-      it 'passes through matching exceptions not on the default pass_through_exceptions: list'
+        it 'passes through matching exceptions on the default pass_through_exceptions: list' do
+          expect do
+            subject
+          end.to raise_exception(exception_class, exception_message)
+        end
+      end
+
+      context 'when exceptions: is empty but pass-through exception raised' do
+        let(:exceptions) { [] }
+        let(:exception_class) { NoMemoryError }
+
+        it 'passes through matching exceptions not on the default pass_through_exceptions: list'
+      end
     end
 
     context 'when pass_through_exceptions: given' do
