@@ -26,6 +26,9 @@ class TestEscalateGemWithBlock
   end
 end
 
+class DerivedFromException < Exception; end
+class SiblingDerivedFromException < Exception; end
+
 RSpec.describe Escalate do
   let(:exception) {
     begin
@@ -95,7 +98,7 @@ RSpec.describe Escalate do
 
         it 'includes the provided context in the json log entry' do
           expect do
-            TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception", hello: "world", more: "context")
+            TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception", context: { hello: "world", more: "context" })
           end.to output("#{expected_log_line}\n").to_stdout_from_any_process
         end
       end
@@ -107,8 +110,126 @@ RSpec.describe Escalate do
 
         it 'includes the provided context at the end of the message' do
           expect do
-            TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception", hello: "world", more: "context")
+            TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception", context: { hello: "world", more: "context" })
           end.to output(expected_log_line).to_stdout_from_any_process
+        end
+      end
+    end
+  end
+
+  describe '#rescue_and_escalate' do
+    let(:logger) { Logger.new(STDOUT) }
+    let(:location_message) { "I was doing something and got this exception" }
+    let(:context) { { hello: "world" } }
+    let(:log_message) { "[Escalate] #{location_message} (#{context.inspect})" }
+    let(:expected_log_line) { /#{Regexp.escape(log_message)}/ }
+
+    it 'rescues and calls escalate' do
+      expect(TestEscalateGemWithLogger).to receive(:escalate).with(be_exception(ArgumentError, 'bang!'), location_message, context: context)
+
+      TestEscalateGemWithLogger.rescue_and_escalate(location_message, context: context) do
+        raise ArgumentError, 'bang!'
+      end
+    end
+
+    context 'with basic defaults' do
+      let(:exception_class) { DerivedFromException }
+      let(:exception_message) { 'boom!' }
+      let(:exceptions) { [DerivedFromException] }
+      let(:args) { [location_message] }
+      let(:kwargs) { { context: context, exceptions: exceptions } }
+      let(:subject) do
+        TestEscalateGemWithLogger.rescue_and_escalate(*args, **kwargs) do
+          raise exception_class, exception_message
+        end
+      end
+
+      it 'rescues matching exceptions' do
+        expect { subject }.to_not raise_exception
+      end
+
+      context 'when non-matching exception raised' do
+        let(:exception_class) { SiblingDerivedFromException }
+
+        it 'passes through' do
+          expect { subject }.to raise_exception(exception_class, exception_message)
+        end
+      end
+
+      context 'when broad exceptions rescued' do
+        let(:exceptions) { [Exception] }
+
+        context 'but pass-through exception raised' do
+          let(:exception_class) { NoMemoryError }
+
+          it 'passes through exception' do
+            expect { subject }.to raise_exception(exception_class, exception_message)
+          end
+        end
+
+        context 'and non-pass-through exception raised' do
+          let(:exception_class) { RuntimeError }
+
+          it 'rescues matching exceptions' do
+            expect { subject }.to_not raise_exception
+          end
+        end
+      end
+
+      context 'when exceptions: is empty but pass-through exception raised' do
+        let(:exceptions) { [] }
+        let(:exception_class) { NoMemoryError }
+
+        it 'passes through matching exceptions on the default pass_through_exceptions: list' do
+          expect { subject }.to raise_exception(exception_class, exception_message)
+        end
+      end
+
+      context 'when exceptions: is empty but pass-through exception raised' do
+        let(:exceptions) { [] }
+        let(:exception_class) { NoMemoryError }
+
+        it 'passes through matching exceptions not on the default pass_through_exceptions: list' do
+          expect { subject }.to raise_exception(exception_class, exception_message)
+        end
+      end
+
+      context 'when pass_through_exceptions: is empty' do
+        let(:kwargs) { { context: context, exceptions: exceptions, pass_through_exceptions: [] } }
+
+        context 'and exception raised matching exceptions:' do
+          it 'rescues matching exceptions' do
+            expect { subject }.to_not raise_exception
+          end
+        end
+
+        context 'and exception raised not matching exceptions:' do
+          let(:exception_class) { SiblingDerivedFromException }
+
+          it 'passes through non-matching exceptions' do
+            expect { subject }.to raise_exception(exception_class, exception_message)
+          end
+        end
+      end
+
+      context 'when both exceptions: and pass_through_exceptions: given' do
+        let(:exceptions) { [Exception] }
+        let(:kwargs) { { context: context, exceptions: exceptions, pass_through_exceptions: [DerivedFromException] } }
+
+        context 'when exception raised that matches exceptions:' do
+          let(:exception_class) { SiblingDerivedFromException }
+
+          it 'rescues matching exceptions' do
+            expect { subject }.to_not raise_exception
+          end
+        end
+
+        context 'when exception raised that matches pass_through_exceptions:' do
+          let(:exception_class) { DerivedFromException }
+
+          it 'passes through exception' do
+            expect { subject }.to raise_exception(exception_class, exception_message)
+          end
         end
       end
     end
@@ -135,7 +256,7 @@ RSpec.describe Escalate do
 
         it 'executes the callback' do
           expect(callback).to receive(:call).with(exception, "I was doing something and got this exception", hello: "world", more: "context")
-          TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception", hello: "world", more: "context")
+          TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception", context: { hello: "world", more: "context" })
         end
       end
     end
@@ -164,7 +285,7 @@ RSpec.describe Escalate do
 
         it 'executes the callback' do
           expect(callback).to receive(:call).with(exception, "I was doing something and got this exception", hello: "world", more: "context")
-          TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception", hello: "world", more: "context")
+          TestEscalateGemWithLogger.escalate(exception, "I was doing something and got this exception", context: { hello: "world", more: "context" })
         end
       end
     end

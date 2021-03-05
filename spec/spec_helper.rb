@@ -2,6 +2,13 @@
 
 require "escalate"
 
+RSpec::Matchers.define :be_exception do |klass, message|
+  match do |actual|
+    expect(actual).to be_a(klass)
+    expect(actual.message).to eq(message)
+  end
+end
+
 RSpec.configure do |config|
   if config.files_to_run.one?
     config.default_formatter = 'doc'
