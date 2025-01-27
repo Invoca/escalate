@@ -25,6 +25,7 @@ metadata:
   - ruby
   - open-source
   - gem
+  - public
   description: A simple and lightweight gem to escalate rescued exceptions.
 spec:
   type: library
