@@ -105,7 +105,11 @@ RSpec.describe Escalate do
 
       context "when the logger doesn't extend ContextualLogger" do
         let(:logger) { Logger.new(STDOUT) }
-        let(:log_message) { "[Escalate] I was doing something and got this exception ({:hello=>\"world\", :more=>\"context\"})" }
+        if Gem::Version.new(RUBY_VERSION) < Gem::Version.new("3.4")
+          let(:log_message) { "[Escalate] I was doing something and got this exception ({:hello=>\"world\", :more=>\"context\"})" }
+        else
+          let(:log_message) { "[Escalate] I was doing something and got this exception ({hello: \"world\", more: \"context\"})" }
+        end
         let(:expected_log_line) { /#{Regexp.escape(log_message)}/ }
 
         it 'includes the provided context at the end of the message' do
@@ -251,7 +255,11 @@ RSpec.describe Escalate do
         let(:logger) { instance_double(Logger) }
         before do
           allow(TestEscalateGemWithLogger).to receive(:logger).and_return(logger)
-          expect(logger).to receive(:error).with(/\[Escalate\] I was doing something and got this exception .*:hello=>.*world.*, :more=>.*context/)
+          if Gem::Version.new(RUBY_VERSION) < Gem::Version.new("3.4")
+            expect(logger).to receive(:error).with(/\[Escalate\] I was doing something and got this exception .*:hello=>.*world.*, :more=>.*context/)
+          else
+            expect(logger).to receive(:error).with(/\[Escalate\] I was doing something and got this exception .*{hello:.*world.*, more:.*context/)
+          end
         end
 
         it 'executes the callback' do
