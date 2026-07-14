@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "simplecov_helper"
+
 require "escalate"
 
 RSpec::Matchers.define :be_exception do |klass, message|
